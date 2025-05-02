@@ -6,11 +6,14 @@ export interface ChatMessage {
   type: MessageType;
   text: string;
   timestamp: Date;
+  responseType?: string;
+  exercisePrompt?: string;
 }
 
 export interface TherapeuticResponse {
   text: string;
   type?: 'general' | 'mindfulness' | 'cbt' | 'gratitude' | 'breathing';
+  exercisePrompt?: string;
 }
 
 export type EmotionalState = 'anxious' | 'sad' | 'stressed' | 'happy' | 'neutral' | 'angry';
