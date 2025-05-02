@@ -50,6 +50,7 @@ const Index = () => {
     toast({
       title: "Thank you for your feedback!",
       description: `You rated this session ${feedback.score}/5`,
+      className: "bg-white border-therapy-accent border-l-4"
     });
     
     setTimeout(() => {
@@ -75,11 +76,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-therapy-blue to-white p-4">
-      <div className="w-full max-w-md flex flex-col rounded-lg shadow-lg bg-white h-[600px] overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-therapy-blue/50 to-white p-4">
+      <div className="w-full max-w-md flex flex-col rounded-xl shadow-lg bg-white/90 backdrop-blur-sm h-[650px] overflow-hidden border border-white/50">
         <ChatHeader />
         
-        <div className="flex-grow overflow-y-auto p-4">
+        <div className="flex-grow overflow-y-auto p-4 bg-gradient-to-b from-white/40 to-therapy-gray/10">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
@@ -89,13 +90,13 @@ const Index = () => {
           )}
           
           {sessionEnded && (
-            <div className="mt-6 flex justify-center">
-              <button
+            <div className="mt-6 flex justify-center animate-fade-in">
+              <Button
                 onClick={handleNewSession}
-                className="px-4 py-2 bg-therapy-accent text-white rounded-md hover:bg-therapy-accent/90 transition-colors"
+                className="px-6 py-3 bg-gradient-to-r from-therapy-accent to-therapy-accent/90 text-white rounded-full hover:shadow-md transition-all"
               >
                 Start New Session
-              </button>
+              </Button>
             </div>
           )}
           

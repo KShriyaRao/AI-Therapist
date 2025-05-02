@@ -2,7 +2,7 @@
 import React from 'react';
 import { ChatMessage as ChatMessageType } from '../types/chat';
 import { cn } from '@/lib/utils';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, Brain } from 'lucide-react';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -17,19 +17,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       isUser ? "justify-end" : "justify-start"
     )}>
       <div className={cn(
-        "max-w-[80%] rounded-xl p-3 flex items-start gap-2",
+        "max-w-[80%] rounded-2xl p-4 flex items-start gap-3 shadow-sm",
         isUser 
-          ? "bg-therapy-accent text-white rounded-tr-none" 
-          : "bg-therapy-gray text-gray-800 rounded-tl-none"
+          ? "bg-gradient-to-br from-therapy-accent to-therapy-accent/90 text-white rounded-tr-sm" 
+          : "bg-gradient-to-br from-therapy-gray/95 to-therapy-purple/20 text-gray-800 rounded-tl-sm border border-white/10"
       )}>
-        <div className="mt-1 min-w-[24px]">
+        <div className={cn(
+          "flex items-center justify-center rounded-full w-7 h-7",
+          isUser ? "bg-white/20" : "bg-white/30"
+        )}>
           {isUser ? (
-            <User className="h-5 w-5" />
+            <User className="h-4 w-4 text-white/90" />
           ) : (
-            <Bot className="h-5 w-5" />
+            <Brain className="h-4 w-4 text-therapy-accent/90" />
           )}
         </div>
-        <div className="flex-1 text-sm">
+        <div className="flex-1 text-sm leading-relaxed">
           {message.text}
         </div>
       </div>

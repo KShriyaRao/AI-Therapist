@@ -63,17 +63,17 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Therapy themed colors
+				// Enhanced therapy themed colors
 				therapy: {
-					blue: '#D3E4FD',  // Soft blue
-					green: '#F2FCE2',  // Soft green
-					purple: '#E5DEFF', // Soft purple
-					gray: '#F1F0FB',   // Soft gray
-					accent: '#33C3F0', // Bright blue accent
+					blue: '#D3E4FD',      // Soft blue
+					green: '#F2FCE2',     // Soft green
+					purple: '#E5DEFF',    // Soft purple
+					gray: '#F1F0FB',      // Soft gray
+					accent: '#5EBBF9',    // Bright blue accent (updated)
 				}
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
+				sans: ['Inter', 'system-ui', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -109,10 +109,30 @@ export default {
 				},
 				'pulse-gentle': {
 					'0%, 100%': {
-						opacity: '1'
+						opacity: '1',
+						transform: 'scale(1)'
 					},
 					'50%': {
-						opacity: '0.7'
+						opacity: '0.8',
+						transform: 'scale(1.05)'
+					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-5px)'
+					}
+				},
+				'glow': {
+					'0%, 100%': {
+						opacity: '1',
+						filter: 'brightness(1)'
+					},
+					'50%': {
+						opacity: '0.9',
+						filter: 'brightness(1.1)'
 					}
 				}
 			},
@@ -120,7 +140,13 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.5s ease-out forwards',
-				'pulse-gentle': 'pulse-gentle 3s infinite ease-in-out'
+				'pulse-gentle': 'pulse-gentle 3s infinite ease-in-out',
+				'float': 'float 3s infinite ease-in-out',
+				'glow': 'glow 2s infinite ease-in-out'
+			},
+			boxShadow: {
+				'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+				'button': '0 2px 10px -2px rgba(94, 187, 249, 0.3)',
 			}
 		}
 	},
