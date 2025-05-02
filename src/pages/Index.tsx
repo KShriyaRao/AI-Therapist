@@ -7,6 +7,7 @@ import ChatInput from '../components/ChatInput';
 import FeedbackPrompt from '../components/FeedbackPrompt';
 import { generateId, getInitialMessage, generateResponse } from '../utils/chatUtils';
 import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button'; // Added Button import
 
 const Index = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([getInitialMessage()]);
