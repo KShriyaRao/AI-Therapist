@@ -36,6 +36,19 @@ export const detectEmotionalState = (input: string): EmotionalState => {
   return 'neutral';
 };
 
+// Simple key phrase extraction to ground responses in user's words
+export const extractKeyPhrases = (input: string, max = 3): string[] => {
+  const stopWords = new Set([
+    'i','im','i\'m','am','is','are','the','a','an','and','or','but','if','then','so','to','of','in','on','for','with','about','it','this','that','was','were','be','been','feeling','feel','feels','very','really','just','like','today','now'
+  ]);
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9\s']/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !stopWords.has(w))
+    .slice(0, max);
+};
+
 // Enhanced therapeutic responses based on emotional state
 const therapeuticResponses: Record<EmotionalState, TherapeuticResponse[]> = {
   anxious: [
@@ -143,22 +156,40 @@ const therapeuticResponses: Record<EmotionalState, TherapeuticResponse[]> = {
 };
 
 // Function to generate therapeutic response based on emotional state
-export const generateTherapeuticResponse = (emotionalState: EmotionalState, previousMessages: ChatMessage[] = []): TherapeuticResponse => {
+export const generateTherapeuticResponse = (
+  emotionalState: EmotionalState,
+  previousMessages: ChatMessage[] = [],
+  userInput?: string
+): TherapeuticResponse => {
   const responses = therapeuticResponses[emotionalState];
-  
+
   // Track conversation context to avoid repetitive responses
   const recentResponseTypes = previousMessages
     .filter(msg => msg.type === 'bot')
     .slice(-3)
     .map(msg => msg.responseType || 'general');
-  
+
+  // Bias response type based on user input keywords
+  let preferredType: TherapeuticResponse['type'] | undefined;
+  if (userInput) {
+    const lower = userInput.toLowerCase();
+    if (/(panic|breath|breathing|heart racing|hyperventilat)/.test(lower)) preferredType = 'breathing';
+    else if (/(overwhelm|focus|ruminat|thought|worry|catastroph)/.test(lower)) preferredType = 'cbt';
+    else if (/(sleep|insomnia|tension|body|ground|present|mindful)/.test(lower)) preferredType = 'mindfulness';
+    else if (/(grateful|gratitude|happy|joy|good|excited)/.test(lower)) preferredType = 'gratitude';
+  }
+
+  let responsePool = responses;
+
+  if (preferredType) {
+    const preferred = responses.filter(r => r.type === preferredType && !recentResponseTypes.includes(r.type || 'general'));
+    if (preferred.length) responsePool = preferred;
+  }
+
   // Try to avoid repeating the same response type
-  const availableResponses = responses.filter(response => 
-    !recentResponseTypes.includes(response.type));
-  
-  // If we've filtered out all responses, just use the original array
-  const responsePool = availableResponses.length > 0 ? availableResponses : responses;
-  
+  const nonRepeated = responsePool.filter(response => !recentResponseTypes.includes(response.type || 'general'));
+  responsePool = nonRepeated.length > 0 ? nonRepeated : responsePool;
+
   return responsePool[Math.floor(Math.random() * responsePool.length)];
 };
 
@@ -176,15 +207,41 @@ export const getInitialMessage = (): ChatMessage => {
 // Enhanced response generator with conversation context
 export const generateResponse = (userInput: string, previousMessages: ChatMessage[] = []): ChatMessage => {
   const emotionalState = detectEmotionalState(userInput);
-  const response = generateTherapeuticResponse(emotionalState, previousMessages);
-  
+  const response = generateTherapeuticResponse(emotionalState, previousMessages, userInput);
+
+  // Build empathetic prefix with key phrases
+  const keys = extractKeyPhrases(userInput);
+  const topic = keys.length ? ` about ${keys.join(', ')}` : '';
+  const toneMap: Record<EmotionalState, string> = {
+    anxious: "I hear how anxious you're feeling",
+    sad: "I'm really sorry you're going through this",
+    stressed: "It sounds like you're feeling overwhelmed",
+    angry: "I can sense the frustration you're experiencing",
+    happy: "I'm glad to hear the positive feelings",
+    neutral: "Thank you for sharing how you're feeling",
+  };
+
+  // Detect change in emotional state from previous user message
+  const lastUser = [...previousMessages].reverse().find(m => m.type === 'user');
+  const prevState = lastUser ? detectEmotionalState(lastUser.text) : undefined;
+  let changeNote = '';
+  if (prevState && prevState !== emotionalState) {
+    if ((prevState === 'sad' || prevState === 'anxious' || prevState === 'stressed' || prevState === 'angry') && (emotionalState === 'happy' || emotionalState === 'neutral')) {
+      changeNote = " It's encouraging to hear that shift.";
+    } else if ((prevState === 'happy' || prevState === 'neutral') && (emotionalState === 'sad' || emotionalState === 'anxious' || emotionalState === 'stressed' || emotionalState === 'angry')) {
+      changeNote = " I'm here with you as this feels harder right now.";
+    }
+  }
+
+  const personalizedText = `${toneMap[emotionalState]}${topic}.${changeNote} ${response.text}`;
+
   return {
     id: generateId(),
     type: 'bot',
-    text: response.text,
+    text: personalizedText,
     timestamp: new Date(),
     responseType: response.type,
-    exercisePrompt: response.exercisePrompt
+    exercisePrompt: response.exercisePrompt,
   };
 };
 
