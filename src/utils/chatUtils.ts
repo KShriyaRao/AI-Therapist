@@ -8,45 +8,91 @@ export const generateId = (): string => {
 
 // Enhanced function to detect emotional state from user input
 export const detectEmotionalState = (input: string): EmotionalState => {
-  const lowerInput = input.toLowerCase();
-  
-  // Enhanced emotional detection with more keywords and context
-  if (lowerInput.includes('anxious') || lowerInput.includes('anxiety') || lowerInput.includes('nervous') || 
-      lowerInput.includes('worry') || lowerInput.includes('stressed out') || lowerInput.includes('panic') || 
-      lowerInput.includes('fear') || lowerInput.includes('scared')) {
-    return 'anxious';
-  } else if (lowerInput.includes('sad') || lowerInput.includes('depressed') || lowerInput.includes('unhappy') || 
-            lowerInput.includes('down') || lowerInput.includes('blue') || lowerInput.includes('hopeless') || 
-            lowerInput.includes('lonely') || lowerInput.includes('grief')) {
-    return 'sad';
-  } else if (lowerInput.includes('stress') || lowerInput.includes('overwhelm') || lowerInput.includes('busy') || 
-            lowerInput.includes('too much') || lowerInput.includes('pressure') || lowerInput.includes('burnout') || 
-            lowerInput.includes('exhausted')) {
-    return 'stressed';
-  } else if (lowerInput.includes('happy') || lowerInput.includes('good') || lowerInput.includes('great') || 
-            lowerInput.includes('joy') || lowerInput.includes('excited') || lowerInput.includes('positive') || 
-            lowerInput.includes('wonderful') || lowerInput.includes('pleased')) {
-    return 'happy';
-  } else if (lowerInput.includes('angry') || lowerInput.includes('mad') || lowerInput.includes('upset') || 
-            lowerInput.includes('frustrated') || lowerInput.includes('annoyed') || lowerInput.includes('rage') || 
-            lowerInput.includes('irritated')) {
-    return 'angry';
+  const text = input.toLowerCase();
+
+  // Handle explicit negations like "not happy", "unhappy"
+  if (/(not\s+happy|unhappy)/.test(text)) return 'sad';
+
+  const dict: Record<EmotionalState, RegExp[]> = {
+    anxious: [
+      /anxious|anxiety|panic( attack)?|nervous|worry|worried|fear|scared|afraid|heart racing|overthinking|jitters?/
+    ],
+    sad: [
+      /sad|depress(ed|ion)?|unhappy|down|blue|hopeless|lonely|grief|grieving|tearful|cry(ing)?|empty|worthless|numb/
+    ],
+    stressed: [
+      /stress(ed)?|overwhelm(ed|ing)?|too much|pressure|burn(out|ed)?|exhaust(ed|ion)|tired|drained|swamped|behind/
+    ],
+    happy: [
+      /happy|good|great|joy|joyful|excited|positive|wonderful|pleased|content|grateful/
+    ],
+    angry: [
+      /angry|mad|upset|frustrat(ed|ing)?|annoyed|rage|irritated|furious|pissed/
+    ],
+    neutral: [/.^/]
+  };
+
+  // Score emotions by keyword hits
+  const scores: Record<EmotionalState, number> = {
+    anxious: 0, sad: 0, stressed: 0, happy: 0, neutral: 0, angry: 0
+  };
+
+  (Object.keys(dict) as EmotionalState[]).forEach((emotion) => {
+    dict[emotion].forEach((re) => {
+      const matches = text.match(new RegExp(re, 'g'));
+      if (matches) scores[emotion] += matches.length;
+    });
+  });
+
+  // Downweight happy when mixed with distress
+  if (scores.happy > 0 && (scores.sad > 0 || scores.stressed > 0 || /\b(but|however|although)\b/.test(text))) {
+    scores.happy = Math.max(0, scores.happy - 1);
   }
-  
-  return 'neutral';
+
+  let best: EmotionalState = 'neutral';
+  let bestScore = 0;
+  (Object.keys(scores) as EmotionalState[]).forEach((emotion) => {
+    if (scores[emotion] > bestScore) {
+      best = emotion;
+      bestScore = scores[emotion];
+    }
+  });
+
+  return bestScore > 0 ? best : 'neutral';
 };
 
 // Simple key phrase extraction to ground responses in user's words
 export const extractKeyPhrases = (input: string, max = 3): string[] => {
   const stopWords = new Set([
-    'i','im','i\'m','am','is','are','the','a','an','and','or','but','if','then','so','to','of','in','on','for','with','about','it','this','that','was','were','be','been','feeling','feel','feels','very','really','just','like','today','now'
+    'i','im','i\'m','am','is','are','the','a','an','and','or','but','if','then','so','to','of','in','on','for','with','about','it','this','that','was','were','be','been','feeling','feel','feels','very','really','just','like','today','now','my','me','you','your','we','our'
   ]);
-  return input
+  const tokens = input
     .toLowerCase()
     .replace(/[^a-z0-9\s']/g, ' ')
     .split(/\s+/)
-    .filter(w => w && !stopWords.has(w))
-    .slice(0, max);
+    .filter(Boolean);
+
+  const words = tokens.filter(w => !stopWords.has(w));
+
+  const bigrams: string[] = [];
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (!stopWords.has(tokens[i]) && !stopWords.has(tokens[i+1])) {
+      bigrams.push(`${tokens[i]} ${tokens[i+1]}`);
+    }
+  }
+
+  const counts = new Map<string, number>();
+  [...words, ...bigrams].forEach(term => counts.set(term, (counts.get(term) || 0) + 1));
+
+  const boost = ['panic attack','can\'t sleep','not sleeping','lost job','break up','heart racing','overthinking','feel alone','no energy'];
+  boost.forEach(term => {
+    if (counts.has(term)) counts.set(term, (counts.get(term) || 0) + 2);
+  });
+
+  return [...counts.entries()]
+    .sort((a,b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, max)
+    .map(([t]) => t);
 };
 
 // Enhanced therapeutic responses based on emotional state
@@ -173,10 +219,10 @@ export const generateTherapeuticResponse = (
   let preferredType: TherapeuticResponse['type'] | undefined;
   if (userInput) {
     const lower = userInput.toLowerCase();
-    if (/(panic|breath|breathing|heart racing|hyperventilat)/.test(lower)) preferredType = 'breathing';
-    else if (/(overwhelm|focus|ruminat|thought|worry|catastroph)/.test(lower)) preferredType = 'cbt';
-    else if (/(sleep|insomnia|tension|body|ground|present|mindful)/.test(lower)) preferredType = 'mindfulness';
-    else if (/(grateful|gratitude|happy|joy|good|excited)/.test(lower)) preferredType = 'gratitude';
+    if (/(panic( attack)?|breath|breathing|heart racing|hyperventilat)/.test(lower)) preferredType = 'breathing';
+    else if (/(overwhelm|focus|ruminat|thought|worry|catastroph|spiral|negative thoughts)/.test(lower)) preferredType = 'cbt';
+    else if (/(sleep|insomnia|tension|body|ground|present|mindful|scan|relax)/.test(lower)) preferredType = 'mindfulness';
+    else if (/(grateful|gratitude|happy|joy|good|excited|proud|content)/.test(lower)) preferredType = 'gratitude';
   }
 
   let responsePool = responses;

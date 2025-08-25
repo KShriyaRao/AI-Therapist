@@ -101,23 +101,7 @@ const Index = () => {
       className: "bg-white border-therapy-accent border-l-4"
     });
     
-    setTimeout(() => {
       setShowFeedback(false);
-      setSessionEnded(true);
-      
-      // Add a personalized closing message
-      const closingMessage: ChatMessageType = {
-        id: generateId(),
-        type: 'bot',
-        text: userName 
-          ? `Thank you for chatting with me today, ${userName}. Remember, it's important to take care of your mental health. Feel free to come back anytime you need support.`
-          : "Thank you for chatting with me today. Remember, it's important to take care of your mental health. Feel free to come back anytime you need support.",
-        timestamp: new Date(),
-        responseType: 'closing'
-      };
-      
-      setMessages(prev => [...prev, closingMessage]);
-    }, 1000);
   };
 
   // Start a new session
@@ -164,7 +148,7 @@ const Index = () => {
         
         <ChatInput 
           onSendMessage={handleSendMessage} 
-          isDisabled={showFeedback || sessionEnded} 
+          isDisabled={false} 
         />
       </div>
     </div>
